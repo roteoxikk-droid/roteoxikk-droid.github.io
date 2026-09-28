@@ -4,7 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <style>
+   <style>
+        .menu {
+            background-image: url('https://as1.ftcdn.net/jpg/03/41/78/66/1000_F_341786609_IxEDJKSpxWyIhLf7wTX0WyVCcN2wpIJx.jpg');
+            background-size: cover;
+            background-position: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 32px; 
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu a, .menu button {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-size: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .menu a:hover, .menu button:hover {
+            color: #ff5252;
+        }
+
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
@@ -13,7 +41,7 @@
             background-color: #f4f4f9;
             color: #333;
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #d32f2f;
         }
         table {
@@ -33,18 +61,34 @@
         img {
             max-width: 300px;
             height: auto;
-            border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
+    <nav>
+    <a href="#opis" style="color: white; margin-right: 15px; text-decoration: none;">Opis</a>
+    <a href="#postacie" style="color: white; margin-right: 15px; text-decoration: none;">Postacie</a>
+    <a href="#galeria" style="color: white; margin-right: 15px; text-decoration: none;">Galeria</a>
+    <a href="#harmonogram" style="color: white; margin-right: 15px; text-decoration: none;">Harmonogram dat</a>
+    <a href="#ciekawostki" style="color: white; margin-right: 15px; text-decoration: none;">Ciekawostki</a>
+    <a href="#kontakt" style="color: white; margin-right: 65px; text-decoration: none;">Kontakt</a>
+    <a button onclick="toggleDarkMode()" style="color: white; padding: 10px 15px; cursor: pointer; margin-bottom: 20px;">jasny/ciemny</button></a>
+    
+</nav>
+
+<script>
+function toggleDarkMode() {
+    document.body.style.backgroundColor = document.body.style.backgroundColor === 'black' ? '#f4f4f9' : 'black';
+    document.body.style.color = document.body.style.color === 'white' ? '#333' : 'white';
+}
+</script>
 
     <h1>Mój ulubiony film: Spider-Man: Bez drogi do domu</h1>
     <br>
-    <h2>Opis filmu</h2>
+    <h2 id="opis">Opis filmu</h2>
     <p>W filmie Spider-Man: Bez drogi do domu tożsamość Petera Parkera zostaje ujawniona światu, co niszczy życie jego bliskich. Aby to naprawić, chłopak prosi Doktora Strange'a o rzucenie zaklęcia, które wymaże tę wiedzę z pamięci ludzi, jednak przez błędy w jego inkantacji dochodzi do otwarcia multiwersum. W efekcie do jego świata przedostają się groźni złoczyńcy oraz dawni Spider-Mani z innych wymiarów, zmuszając młodego bohatera do ostatecznej walki i podjęcia bolesnej decyzji o poświęceniu.</p>
-    <h2>Główne postacie Filmu</h2>
+    <h2 id="postacie">Główne postacie Filmu</h2>
     <ol>
         <li>Bohaterowie</li>
             <ul>
@@ -56,9 +100,9 @@
             <li>Wujek Ben Parker (Cliff Robertson) – przybrany ojciec Petera, którego śmierć zmienia jego życie.</li>
     </ul>
     </ol>
-    <h2>Galeria</h2>
+    <h2 id="galeria">Galeria</h2>
  <p><a href="https://www.bing.com/ck/a?!&&p=2266cae98efa5082beaa6ac8fce4b2b10aba0488826424cef24ba65ecdf12048JmltdHM9MTc5MDU1MzYwMA&ptn=3&ver=2&hsh=4&fclid=183737ba-65cf-6feb-34d1-207264aa6ecd&psq=cda+no+way+home&u=a1aHR0cHM6Ly93d3cuY2RhLnBsL3ZpZGVvLzk0ODc5MDI2Yi92ZmlsbQ" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/0/00/Spider-Man_No_Way_Home_poster.jpg"></a></p>
- <h2>Harmonogram produkcji filmu</h2>
+ <h2 id="harmonogram">Harmonogram produkcji filmu</h2>
  <table border="1px">
     <tr>
         <th>Etap</th>
@@ -79,7 +123,7 @@
     </tr>
  </table>
 
- <h3>Ciekawostki</h3>
+ <h3 id="ciekawostki">Ciekawostki</h3>
  <ul>
     <li>Odrzucone gwiazdy: Zanim Tobey Maguire dostał rolę, studia filmowe rozważały takich aktorów jak Leonardo DiCaprio, Heath Ledger czy Ryan Gosling.</li>
     <li>Słynna scena z tacą: Słynna scena, w której Peter Parker łapie tacę z obiadem i wszystkie przedmioty spadające na nią Mary Jane, nie była efektem CGI – Tobey Maguire złapał je naprawdę po 156 próbach i wielu godzinach treningu!</li>
@@ -89,7 +133,7 @@
  </ul>
  <h2>Przeczytałeś wszysto? Obejrzyj zwiastun!</h2>
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/JfVOs4VSpmA" title="YouTube video player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
- <hr> 
+ <hr id="kontakt"> 
  <p>Autor strony: Michał Dominiak</p>
  <p>Kontakt: <a href="mailto:roteoxikk@gmail.com" class="email-button">Kliknij tutaj!</a></p>
 </body>
