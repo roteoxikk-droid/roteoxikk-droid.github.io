@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KuKirin G4 - Dashboard & Control</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 30px 20px; 
+            background: #121212; 
+            color: #fff; 
+        }
+        h1 { margin-bottom: 5px; color: #00ffcc; }
+        p { color: #888; margin-top: 0; font-size: 14px; }
+        
+        button { 
+            padding: 14px 28px; 
+            font-size: 16px; 
+            background: #00ffcc; 
+            color: #000; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s;
+            margin: 5px;
+        }
+        button:hover { background: #00b38f; }
+
+        /* Przyciski trybów */
+        .btn-eco { background: #00ff66; color: #000; }
+        .btn-eco:hover { background: #00cc52; }
+        .btn-sport { background: #0099ff; color: #fff; }
+        .btn-sport:hover { background: #0077cc; }
+        .btn-race { background: #ff3333; color: #fff; }
+        .btn-race:hover { background: #cc0000; }
+
+        #status { margin: 15px 0; font-size: 15px; color: #ffcc00; font-weight: bold; }
+        
+        .dashboard-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            max-width: 600px;
+            margin: 20px auto 0 auto;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 240px;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .card h3 { 
+            margin-top: 0; 
+            color: #888; 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            border-bottom: 1px solid #333; 
+            padding-bottom: 8px; 
+        }
+        
+        .metric-value { font-size: 46px; font-weight: bold; margin: 10px 0; color: #fff; }
+        .metric-unit { font-size: 14px; color: #666; }
+
+        /* Kolory dynamiczne trybów */
+        .eco { color: #00ff66 !important; text-shadow: 0 0 15px rgba(0,255,102,0.3); }
+        .sport { color: #0099ff !important; text-shadow: 0 0 15px rgba(0,153,255,0.3); }
+        .race { color: #ff3333 !important; text-shadow: 0 0 15px rgba(255,51,51,0.3); }
+        
+        #raw-stream {
+            font-family: monospace;
+            font-size: 11px;
+            color: #00ffcc;
+            background: #0a0a0a;
+            padding: 12px;
+            border-radius: 6px;
+            word-break: break-all;
+            max-height: 60px;
+            overflow-y: auto;
+            max-width: 560px;
+            margin: 20px auto 0 auto;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>KuKirin G4 Dashboard</h1>
+    <p>Telemetria BLE & Zdalne Sterowanie</p>
+    
+    <button id="connectBtn">Połącz z hulajnogą</button>
+    <div id="status">Status: Rozłączony</div>
+
+    <div class="dashboard-grid">
+        <!-- Prędkość -->
+        <div class="card">
+            <h3>Prędkość</h3>
+            <div id="speedDisplay" class="metric-value">0</div>
+            <div class="metric-unit">km/h</div>
+        </div>
+
+        <!-- Bateria -->
+        <div class="card">
+            <h3>Bateria</h3>
+            <div id="batteryDisplay" class="metric-value">--</div>
+            <div class="metric-unit">%</div>
+        </div>
+
+        <!-- Tryb jazdy i sterowanie -->
+        <div class="card" style="flex-basis: 100%;">
+            <h3>Aktualny Tryb Jazdy</h3>
+            <div id="modeDisplay" class="metric-value" style="font-size: 38px;">---</div>
+            
+            <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
+                <div style="font-size: 13px; color: #aaa; margin-bottom: 10px;">Zmień tryb jazdy:</div>
+                <button class="btn-eco" onclick="setMode('ECO')">ECO</button>
+                <button class="btn-sport" onclick="setMode('SPORT')">SPORT</button>
+                <button class="btn-race" onclick="setMode('RACE')">RACE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="raw-stream">Ostatnia ramka: oczekiwanie na połączenie...</div>
+
+    <script>
+        const connectBtn = document.getElementById('connectBtn');
+        const statusDiv = document.getElementById('status');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const batteryDisplay = document.getElementById('batteryDisplay');
+        const modeDisplay = document.getElementById('modeDisplay');
+        const rawStream = document.getElementById('raw-stream');
+
+        // Identyfikatory usług dla KuKirin G4
+        const SERVICE_FFF0 = 0xFFF0;
+        const CHAR_FFF1 = 0xFFF1; // Zapis (Sterowanie)
+        const CHAR_FFF2 = 0xFFF2; // Powiadomienia (Telemetria)
+        
+        const SERVICE_BATTERY = 0x180F;
+        const CHAR_BATTERY = 0x2A19;
+
+        // Stałe protokołu
+        const GATE_OFFSET = 6;
+        const GATE_VALUE = 0x00;
+        const MODE_OFFSET = 5;
+
+        const MODE_MAP = {
+            0x01: { name: "ECO", class: "eco" },
+            0x02: { name: "SPORT", class: "sport" },
+            0x03: { name: "RACE", class: "race" }
+        };
+
+        let writeCharacteristic = null;
+
+        connectBtn.addEventListener('click', async () => {
+            try {
+                statusDiv.innerText = "Status: Skanowanie urządzeń...";
+                
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'G4' }],
+                    optionalServices: [SERVICE_FFF0, SERVICE_BATTERY]
+                });
+
+                statusDiv.innerText = "Status: Łączenie z GATT...";
+                const server = await device.gatt.connect();
+
+                device.addEventListener('gattserverdisconnected', () => {
+                    statusDiv.innerText = "Status: Utracono połączenie z hulajnogą!";
+                    modeDisplay.innerText = "---";
+                    modeDisplay.className = "metric-value";
+                });
+
+                // 1. Odczyt poziomu baterii (Standard Battery Profile 0x180F)
+                try {
+                    const batteryService = await server.getPrimaryService(SERVICE_BATTERY);
+                    const batChar = await batteryService.getCharacteristic(CHAR_BATTERY);
+                    
+                    const batVal = await batChar.readValue();
+                    batteryDisplay.innerText = batVal.getUint8(0);
+
+                    await batChar.startNotifications();
+                    batChar.addEventListener('characteristicvaluechanged', (e) => {
+                        batteryDisplay.innerText = e.target.value.getUint8(0);
+                    });
+                } catch (e) {
+                    console.log("Standardowa bateria niedostępna:", e);
+                }
+
+                // 2. Obsługa kanału FFF0 (Sterowanie na FFF1, Nasłuch na FFF2)
+                const fff0Service = await server.getPrimaryService(SERVICE_FFF0);
+                
+                writeCharacteristic = await fff0Service.getCharacteristic(CHAR_FFF1);
+                const notifyChar = await fff0Service.getCharacteristic(CHAR_FFF2);
+                
+                await notifyChar.startNotifications();
+                statusDiv.innerText = "Status: Połączono! Dashboard aktywny.";
+
+                notifyChar.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = event.target.value;
+                    let bytes = new Uint8Array(value.buffer);
+                    
+                    // Ignorujemy puste paczki ze samych 0xFF
+                    if (!bytes.every(b => b === 0xff)) {
+                        const hexString = Array.from(bytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+                        rawStream.innerText = `Odebrano (${bytes.length}b): ${hexString}`;
+
+                        // Dekodowanie trybu jazdy z ramki
+                        if (bytes.length > GATE_OFFSET && bytes[GATE_OFFSET] === GATE_VALUE) {
+                            if (bytes[0] === 0xF0 && bytes[1] === 0x4C) {
+                                const modeByte = bytes[MODE_OFFSET];
+                                if (MODE_MAP[modeByte]) {
+                                    const currentMode = MODE_MAP[modeByte];
+                                    modeDisplay.innerText = currentMode.name;
+                                    modeDisplay.className = "metric-value " + currentMode.class;
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = `Błąd: ${error.message}`;
+            }
+        });
+
+        // Wysyłanie komendy przełączenia trybu przez kanał zapisu FFF1
+        async function setMode(modeName) {
+            if (!writeCharacteristic) {
+                alert("Najpierw połącz się z hulajnogą!");
+                return;
+            }
+            try {
+                let command;
+                if (modeName === 'ECO') command = new Uint8Array([0xF0, 0x4C, 0x00, 0x00, 0x00, 0x01, 0x00]);
+                if (modeName === 'SPORT') command = new Uint8Array([0xF0, 0x4C, 0x00, 0x00, 0x00, 0x02, 0x00]);
+                if (modeName === 'RACE') command = new Uint8Array([0xF0, 0x4C, 0x00, 0x00, 0x00, 0x03, 0x00]);
+
+                await writeCharacteristic.writeValueWithoutResponse(command);
+                console.log("Wysłano żądanie zmiany trybu na:", modeName);
+            } catch (err) {
+                console.error("Błąd wysyłania:", err);
+                alert("Błąd podczas wysyłania komendy: " + err.message);
+            }
+        }
+    </script>
+
+</body>
+</html>
